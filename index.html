@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Электронный билет</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #f2f3f5;
+            font-family: Arial, Helvetica, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #222;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.10);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .settings-button {
+            width: 44px;
+            height: 44px;
+            border: none;
+            border-radius: 50%;
+            background: #f0f1f3;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        .settings-button:active {
+            transform: scale(0.95);
+        }
+
+        .label {
+            text-align: center;
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .code {
+            height: 65px;
+            border: 2px solid #e1e2e5;
+            border-radius: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 34px;
+            font-weight: bold;
+            letter-spacing: 10px;
+            margin-bottom: 20px;
+            background: #fafafa;
+        }
+
+        .keyboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .key {
+            height: 62px;
+            border: none;
+            border-radius: 15px;
+            background: #f0f1f3;
+            font-size: 23px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.1s;
+        }
+
+        .key:active {
+            transform: scale(0.94);
+            background: #ddd;
+        }
+
+        .key.delete {
+            background: #ffe7e7;
+            color: #d40000;
+        }
+
+        .key.clear {
+            background: #e8e8e8;
+            color: #444;
+        }
+
+        .sms-button {
+            width: 100%;
+            height: 60px;
+            margin-top: 18px;
+            border: none;
+            border-radius: 16px;
+            background: #111;
+            color: white;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .sms-button:active {
+            transform: scale(0.98);
+        }
+
+        .sms-button:disabled {
+            background: #bbb;
+            cursor: not-allowed;
+        }
+
+        .preview {
+            margin-top: 18px;
+            padding: 15px;
+            border-radius: 15px;
+            background: #f6f6f6;
+            font-size: 13px;
+            color: #555;
+            white-space: pre-line;
+            line-height: 1.5;
+        }
+
+        .preview-title {
+            font-weight: bold;
+            color: #222;
+            margin-bottom: 7px;
+        }
+
+        /* SETTINGS */
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            width: 100%;
+            max-width: 380px;
+            background: white;
+            border-radius: 22px;
+            padding: 24px;
+        }
+
+        .modal-title {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 7px;
+        }
+
+        .phone-input {
+            width: 100%;
+            height: 52px;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 0 14px;
+            font-size: 17px;
+            outline: none;
+        }
+
+        .phone-input:focus {
+            border-color: #111;
+        }
+
+        .save-button {
+            width: 100%;
+            height: 52px;
+            margin-top: 15px;
+            border: none;
+            border-radius: 12px;
+            background: #111;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close-button {
+            width: 100%;
+            height: 48px;
+            margin-top: 8px;
+            border: none;
+            border-radius: 12px;
+            background: #eee;
+            color: #333;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .saved-info {
+            margin-top: 12px;
+            font-size: 13px;
+            color: #777;
+            text-align: center;
+        }
+
+        .error {
+            color: #d00000;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 10px;
+            display: none;
+        }
+
+        @media (max-width: 360px) {
+            .container {
+                padding: 12px;
+            }
+
+            .card {
+                padding: 18px;
+            }
+
+            .key {
+                height: 56px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="card">
+
+        <div class="header">
+            <div class="title">Электронный билет</div>
+
+            <button
+                class="settings-button"
+                onclick="openSettings()"
+                aria-label="Настройки">
+                ⚙️
+            </button>
+        </div>
+
+        <div class="label">
+            Введите бортовой номер
+        </div>
+
+        <div id="codeDisplay" class="code">
+            • • • •
+        </div>
+
+        <div class="keyboard">
+
+            <button class="key" onclick="addDigit('1')">1</button>
+            <button class="key" onclick="addDigit('2')">2</button>
+            <button class="key" onclick="addDigit('3')">3</button>
+
+            <button class="key" onclick="addDigit('4')">4</button>
+            <button class="key" onclick="addDigit('5')">5</button>
+            <button class="key" onclick="addDigit('6')">6</button>
+
+            <button class="key" onclick="addDigit('7')">7</button>
+            <button class="key" onclick="addDigit('8')">8</button>
+            <button class="key" onclick="addDigit('9')">9</button>
+
+            <button class="key clear" onclick="clearCode()">C</button>
+            <button class="key" onclick="addDigit('0')">0</button>
+            <button class="key delete" onclick="deleteDigit()">⌫</button>
+
+        </div>
+
+        <button
+            id="smsButton"
+            class="sms-button"
+            onclick="openSMS()"
+            disabled>
+            💬 Открыть SMS
+        </button>
+
+        <div id="preview" class="preview">
+            <div class="preview-title">
+                Предпросмотр SMS
+            </div>
+
+            Введите 4 цифры
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- SETTINGS MODAL -->
+
+<div id="settingsModal" class="modal">
+
+    <div class="modal-content">
+
+        <div class="modal-title">
+            Настройки
+        </div>
+
+        <label class="input-label">
+            Номер получателя SMS
+        </label>
+
+        <input
+            id="phoneInput"
+            class="phone-input"
+            type="tel"
+            placeholder="+373XXXXXXXX"
+            autocomplete="tel">
+
+        <div id="error" class="error">
+            Введите номер телефона
+        </div>
+
+        <button
+            class="save-button"
+            onclick="savePhone()">
+            Сохранить
+        </button>
+
+        <button
+            class="close-button"
+            onclick="closeSettings()">
+            Закрыть
+        </button>
+
+        <div class="saved-info">
+            Номер сохраняется только в этом браузере.
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    /*
+     * ==========================================
+     * НАСТРОЙКИ
+     * ==========================================
+     */
+
+    const STORAGE_KEY = "sms_receiver_phone";
+
+    let code = "";
+
+
+    /*
+     * ==========================================
+     * ПОЛУЧЕНИЕ НОМЕРА ИЗ LOCAL STORAGE
+     * ==========================================
+     */
+
+    function getPhone() {
+        return localStorage.getItem(STORAGE_KEY) || "";
+    }
+
+
+    /*
+     * ==========================================
+     * ДОБАВЛЕНИЕ ЦИФРЫ
+     * ==========================================
+     */
+
+    function addDigit(digit) {
+
+        if (code.length >= 4) {
+            return;
+        }
+
+        code += digit;
+
+        updateDisplay();
+        updatePreview();
+    }
+
+
+    /*
+     * ==========================================
+     * УДАЛИТЬ ПОСЛЕДНЮЮ ЦИФРУ
+     * ==========================================
+     */
+
+    function deleteDigit() {
+
+        if (code.length === 0) {
+            return;
+        }
+
+        code = code.slice(0, -1);
+
+        updateDisplay();
+        updatePreview();
+    }
+
+
+    /*
+     * ==========================================
+     * ОЧИСТИТЬ ВСЕ
+     * ==========================================
+     */
+
+    function clearCode() {
+
+        code = "";
+
+        updateDisplay();
+        updatePreview();
+    }
+
+
+    /*
+     * ==========================================
+     * ОБНОВЛЕНИЕ ОТОБРАЖЕНИЯ КОДА
+     * ==========================================
+     */
+
+    function updateDisplay() {
+
+        let result = "";
+
+        for (let i = 0; i < 4; i++) {
+
+            if (i < code.length) {
+                result += code[i];
+            } else {
+                result += "•";
+            }
+
+            if (i < 3) {
+                result += " ";
+            }
+        }
+
+        document.getElementById("codeDisplay").textContent = result;
+
+        document.getElementById("smsButton").disabled =
+            code.length !== 4;
+    }
+
+
+    /*
+     * ==========================================
+     * ФОРМАТИРОВАНИЕ ДАТЫ
+     * ==========================================
+     */
+
+    function getCurrentDate() {
+
+        const now = new Date();
+
+        const day = String(now.getDate()).padStart(2, "0");
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        const year = now.getFullYear();
+
+        return `${day}.${month}.${year}`;
+    }
+
+
+    /*
+     * ==========================================
+     * ФОРМАТИРОВАНИЕ ВРЕМЕНИ
+     * ==========================================
+     */
+
+    function getCurrentTime() {
+
+        const now = new Date();
+
+        const hours = String(now.getHours()).padStart(2, "0");
+        const minutes = String(now.getMinutes()).padStart(2, "0");
+
+        return `${hours}:${minutes}`;
+    }
+
+
+    /*
+     * ==========================================
+     * СЛУЧАЙНЫЕ 4 ЦИФРЫ
+     * ==========================================
+     */
+
+    function generateRandomDigits() {
+
+        const randomNumber =
+            Math.floor(Math.random() * 10000);
+
+        return String(randomNumber).padStart(4, "0");
+    }
+
+
+    /*
+     * ==========================================
+     * СОЗДАНИЕ ТЕКСТА SMS
+     * ==========================================
+     */
+
+    function createSMS() {
+
+        const randomDigits = generateRandomDigits();
+
+        const ticketNumber =
+            code + randomDigits;
+
+        const date =
+            getCurrentDate();
+
+        const time =
+            getCurrentTime();
+
+        return (
+            `Electronnyi bilet no. ${ticketNumber}\n` +
+            `Cislo ${date} vremea ${time}\n` +
+            `Deystvitelen 1 chas\n` +
+            `Tsena 7 MDL\n` +
+            `Bortovoi nomer ${code}`
+        );
+    }
+
+
+    /*
+     * ==========================================
+     * ПРЕДПРОСМОТР
+     * ==========================================
+     */
+
+    function updatePreview() {
+
+        const preview =
+            document.getElementById("preview");
+
+        if (code.length !== 4) {
+
+            preview.innerHTML = `
+                <div class="preview-title">
+                    Предпросмотр SMS
+                </div>
+
+                Введите 4 цифры
+            `;
+
+            return;
+        }
+
+        /*
+         * Для предпросмотра создаём
+         * отдельный случайный номер.
+         */
+
+        const randomDigits =
+            generateRandomDigits();
+
+        const ticketNumber =
+            code + randomDigits;
+
+        preview.innerHTML = `
+            <div class="preview-title">
+                Предпросмотр SMS
+            </div>
+
+            Electronnyi bilet no. ${ticketNumber}<br>
+            Cislo ${getCurrentDate()} vremea ${getCurrentTime()}<br>
+            Deystvitelen 1 chas<br>
+            Tsena 7 MDL<br>
+            Bortovoi nomer ${code}
+        `;
+    }
+
+
+    /*
+     * ==========================================
+     * ОТКРЫТЬ SMS
+     * ==========================================
+     */
+
+    function openSMS() {
+
+        if (code.length !== 4) {
+            return;
+        }
+
+        const phone = getPhone();
+
+        if (!phone) {
+
+            openSettings();
+
+            return;
+        }
+
+        /*
+         * ВАЖНО:
+         * Здесь генерируются новые случайные цифры
+         * именно в момент нажатия кнопки.
+         */
+
+        const message = createSMS();
+
+        /*
+         * Кодируем сообщение для URL.
+         */
+
+        const encodedMessage =
+            encodeURIComponent(message);
+
+        /*
+         * Открываем приложение SMS.
+         */
+
+        const smsUrl =
+            `sms:${phone}?body=${encodedMessage}`;
+
+        window.location.href = smsUrl;
+    }
+
+
+    /*
+     * ==========================================
+     * ОТКРЫТЬ НАСТРОЙКИ
+     * ==========================================
+     */
+
+    function openSettings() {
+
+        const modal =
+            document.getElementById("settingsModal");
+
+        const input =
+            document.getElementById("phoneInput");
+
+        input.value = getPhone();
+
+        modal.classList.add("active");
+
+        setTimeout(() => {
+            input.focus();
+        }, 100);
+    }
+
+
+    /*
+     * ==========================================
+     * ЗАКРЫТЬ НАСТРОЙКИ
+     * ==========================================
+     */
+
+    function closeSettings() {
+
+        document
+            .getElementById("settingsModal")
+            .classList.remove("active");
+
+        document
+            .getElementById("error")
+            .style.display = "none";
+    }
+
+
+    /*
+     * ==========================================
+     * СОХРАНИТЬ НОМЕР
+     * ==========================================
+     */
+
+    function savePhone() {
+
+        const input =
+            document.getElementById("phoneInput");
+
+        const error =
+            document.getElementById("error");
+
+        let phone =
+            input.value.trim();
+
+        if (!phone) {
+
+            error.style.display = "block";
+
+            return;
+        }
+
+        /*
+         * Разрешаем:
+         * +373...
+         * 373...
+         * и другие номера.
+         */
+
+        localStorage.setItem(
+            STORAGE_KEY,
+            phone
+        );
+
+        error.style.display = "none";
+
+        closeSettings();
+    }
+
+
+    /*
+     * ==========================================
+     * ЗАКРЫТИЕ МОДАЛЬНОГО ОКНА
+     * ПРИ НАЖАТИИ ВНЕ ЕГО
+     * ==========================================
+     */
+
+    document
+        .getElementById("settingsModal")
+        .addEventListener("click", function(event) {
+
+            if (event.target === this) {
+                closeSettings();
+            }
+
+        });
+
+
+    /*
+     * ==========================================
+     * КЛАВИАТУРА КОМПЬЮТЕРА
+     * ==========================================
+     */
+
+    document.addEventListener("keydown", function(event) {
+
+        /*
+         * Цифры 0-9
+         */
+
+        if (/^[0-9]$/.test(event.key)) {
+
+            addDigit(event.key);
+
+        }
+
+        /*
+         * Backspace
+         */
+
+        if (event.key === "Backspace") {
+
+            deleteDigit();
+
+        }
+
+        /*
+         * Escape
+         */
+
+        if (event.key === "Escape") {
+
+            clearCode();
+
+        }
+
+    });
+
+
+    /*
+     * ==========================================
+     * ПЕРВОНАЧАЛЬНОЕ СОСТОЯНИЕ
+     * ==========================================
+     */
+
+    updateDisplay();
+    updatePreview();
+
+</script>
+
+</body>
+</html>
